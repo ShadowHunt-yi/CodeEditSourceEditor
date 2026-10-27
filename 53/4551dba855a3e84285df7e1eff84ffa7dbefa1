@@ -1,0 +1,16 @@
+Sources/CodeEditSourceEditor/Enums/CaptureName.swift
+  h_6984196a933a03 36-42,102-117,168-179
+Sources/CodeEditSourceEditor/Theme/EditorTheme.swift
+  h_6984196a933a03 97-103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "534551dba855a3e84285df7e1eff84ffa7dbefa1",
+  "prompts": {},
+  "humans": {
+    "h_6984196a933a03": {
+      "author": "qiyi <1724747604@qq.com>"
+    }
+  }
+}
