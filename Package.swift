@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "CodeEditSourceEditor",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     products: [
         // A source editor with useful features for code editing.
@@ -15,14 +16,14 @@ let package = Package(
     ],
     dependencies: [
         // A fast, efficient, text view for code.
+        // NOTE: 本地定制依赖，指向同级的 CodeEditTextView 源码副本。
         .package(
-            url: "https://github.com/CodeEditApp/CodeEditTextView.git",
-            from: "0.12.1"
+            path: "../CodeEditTextView"
         ),
         // tree-sitter languages
+        // NOTE: 本地定制依赖，指向同级的 CodeEditLanguages 源码副本。
         .package(
-            url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
-            exact: "0.1.20"
+            path: "../CodeEditLanguages"
         ),
         // CodeEditSymbols
         .package(
