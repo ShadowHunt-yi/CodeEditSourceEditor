@@ -46,7 +46,17 @@ actor LineFoldCalculator {
     /// - Parameter textChangedStream: A stream of text changes.
     private func listenToTextChanges(textChangedStream: AsyncStream<Void>) {
         textChangedTask = Task {
+            // 合并连续输入。
+            //
+            // 原实现对每次文本变化都重算整篇文档的折叠区间：连续输入时（每次按键一次事件）
+            // 相当于每秒把全文扫描十几次，长文档上会持续占用 CPU 并与语法高亮争抢。
+            // 这里等 180ms，若期间又有编辑到达则放弃本次计算——只在输入停顿后算一次。
+            var pendingEvents = 0
             for await _ in textChangedStream {
+                pendingEvents += 1
+                let observed = pendingEvents
+                try? await Task.sleep(for: .milliseconds(180))
+                guard !Task.isCancelled, observed == pendingEvents else { continue }
                 await buildFoldsForDocument()
             }
         }
