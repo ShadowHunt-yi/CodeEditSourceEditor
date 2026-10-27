@@ -1,0 +1,28 @@
+Sources/CodeEditSourceEditor/Controller/TextViewController+Lifecycle.swift
+  h_6984196a933a03 16,43-49,53,78-79,100,102-103
+Sources/CodeEditSourceEditor/Controller/TextViewController+ReloadUI.swift
+  h_6984196a933a03 17-18
+Sources/CodeEditSourceEditor/Controller/TextViewController+StyleViews.swift
+  h_6984196a933a03 35,47-49,52,59-60,69,77-79,84-86
+Sources/CodeEditSourceEditor/Controller/TextViewController.swift
+  h_6984196a933a03 32-36,204-210,227-229,234-292
+Sources/CodeEditSourceEditor/Highlighting/Highlighter.swift
+  h_6984196a933a03 131-140
+Sources/CodeEditSourceEditor/Highlighting/VisibleRangeProvider.swift
+  h_6984196a933a03 21
+Sources/CodeEditSourceEditor/SourceEditorConfiguration/SourceEditorConfiguration+Appearance.swift
+  h_6984196a933a03 110,170
+Sources/CodeEditSourceEditor/SourceEditorConfiguration/SourceEditorConfiguration+Peripherals.swift
+  h_6984196a933a03 57-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "99e2fef0481d1846b4a103274577ab19976b054b",
+  "prompts": {},
+  "humans": {
+    "h_6984196a933a03": {
+      "author": "qiyi <1724747604@qq.com>"
+    }
+  }
+}
