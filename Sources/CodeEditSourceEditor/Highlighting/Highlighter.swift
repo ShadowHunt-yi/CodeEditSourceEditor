@@ -128,6 +128,16 @@ class Highlighter: NSObject {
         highlightProviders.forEach { $0.invalidate(set) }
     }
 
+    /// 更新可见范围来源中引用的迷你地图。
+    ///
+    /// 迷你地图现在按需创建与释放，创建/销毁时需要把新实例（或 `nil`）同步给可见范围计算，
+    /// 否则迷你地图显示的区域不会被纳入高亮范围。
+    /// - Parameter minimapView: 新的迷你地图，释放时传 `nil`。
+    func updateMinimapView(_ minimapView: MinimapView?) {
+        visibleRangeProvider.minimapView = minimapView
+        visibleRangeProvider.visibleTextChanged()
+    }
+
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
     public func setLanguage(language: CodeLanguage) {

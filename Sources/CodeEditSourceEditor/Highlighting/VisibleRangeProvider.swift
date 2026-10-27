@@ -18,7 +18,7 @@ protocol VisibleRangeProviderDelegate: AnyObject {
 @MainActor
 class VisibleRangeProvider {
     private weak var textView: TextView?
-    private weak var minimapView: MinimapView?
+    weak var minimapView: MinimapView?
     weak var delegate: VisibleRangeProviderDelegate?
 
     var documentRange: NSRange {

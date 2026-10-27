@@ -29,7 +29,11 @@ public class TextViewController: NSViewController {
     internal(set) public var scrollView: NSScrollView!
     internal(set) public var textView: TextView!
     var gutterView: GutterView!
-    var minimapView: MinimapView!
+    /// 迷你地图。为 `nil` 表示未创建（已释放）。
+    ///
+    /// 迷你地图内部持有一份独立的 ``CodeEditTextView/TextLayoutManager``，即一份完整的行索引。
+    /// 为控制内存，仅在需要显示时才创建，隐藏时销毁并置空。
+    private(set) var minimapView: MinimapView?
 
     /// The reformatting guide view
     var reformattingGuideView: ReformattingGuideView!
@@ -197,6 +201,13 @@ public class TextViewController: NSViewController {
 
     var foldProvider: LineFoldProvider
 
+    /// 折叠的计算与缓存模型。
+    ///
+    /// 模块（``LineFoldModel`` 及配套的计算器/存储/折叠带）早已实现，
+    /// 但此前没有任何地方创建它，折叠带因此空白且点击无反应。
+    /// 在 ``loadView`` 中创建并挂到 `gutterView.foldingRibbon`。
+    var foldModel: LineFoldModel?
+
     /// Filters used when applying edits..
     var textFilters: [TextFormation.Filter] = []
 
@@ -213,9 +224,70 @@ public class TextViewController: NSViewController {
 
     var textViewInsets: HorizontalEdgeInsets {
         HorizontalEdgeInsets(
-            left: showGutter ? gutterView.frame.width : 0.0,
+            // `gutterView` 在 `GutterView.init` 期间尚未赋值给本属性，
+            // 而初始化过程会触发 `gutterViewWidthDidUpdate()`，这里必须容忍 nil。
+            left: showGutter ? (gutterView?.frame.width ?? 0.0) : 0.0,
             right: textViewTrailingInset
         )
+    }
+
+    // MARK: - Minimap
+
+    /// 按需创建或销毁迷你地图。
+    ///
+    /// 迷你地图持有独立的布局管理器与行索引，仅隐藏视图并不会释放这部分内存。因此隐藏时必须销毁实例，
+    /// 显示时再按需重建。该方法同时负责约束的建立与拆除，以及高亮器的可见范围来源更新。
+    /// - Parameter visible: 是否显示迷你地图。
+    func setMinimapVisible(_ visible: Bool) {
+        guard scrollView != nil else { return }
+
+        if visible {
+            guard minimapView == nil else {
+                minimapView?.isHidden = false
+                return
+            }
+
+            let minimap = MinimapView(textView: textView, theme: configuration.appearance.theme)
+            minimapView = minimap
+            scrollView.addFloatingSubview(minimap, for: .vertical)
+            activateMinimapConstraints(for: minimap)
+            highlighter?.updateMinimapView(minimap)
+            styleMinimapView()
+            minimap.layout()
+        } else {
+            guard minimapView != nil else { return }
+            highlighter?.updateMinimapView(nil)
+            NSLayoutConstraint.deactivate(minimapView?.constraints ?? [])
+            minimapView?.removeFromSuperview()
+            minimapView = nil
+            minimapXConstraint = nil
+        }
+
+        updateContentInsets()
+        updateTextInsets()
+    }
+
+    /// 为迷你地图建立与滚动视图内容区对齐的约束。
+    private func activateMinimapConstraints(for minimap: MinimapView) {
+        let maxWidthConstraint = minimap.widthAnchor.constraint(lessThanOrEqualToConstant: MinimapView.maxWidth)
+        let relativeWidthConstraint = minimap.widthAnchor.constraint(
+            equalTo: view.widthAnchor,
+            multiplier: 0.17
+        )
+        relativeWidthConstraint.priority = .defaultLow
+
+        let xConstraint = minimap.trailingAnchor.constraint(
+            equalTo: scrollView.contentView.safeAreaLayoutGuide.trailingAnchor
+        )
+        minimapXConstraint = xConstraint
+
+        NSLayoutConstraint.activate([
+            minimap.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            minimap.bottomAnchor.constraint(equalTo: scrollView.contentView.bottomAnchor),
+            xConstraint,
+            maxWidthConstraint,
+            relativeWidthConstraint
+        ])
     }
 
     // MARK: Init

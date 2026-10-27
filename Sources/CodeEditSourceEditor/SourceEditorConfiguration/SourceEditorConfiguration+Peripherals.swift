@@ -54,8 +54,8 @@ extension SourceEditorConfiguration {
             }
 
             if oldConfig?.showMinimap != showMinimap {
-                controller.minimapView?.isHidden = !showMinimap
-                shouldUpdateInsets = true
+                // 隐藏时销毁迷你地图以释放其独立的行索引；显示时按需重建（内部会更新内边距）。
+                controller.setMinimapVisible(showMinimap)
             }
 
             if oldConfig?.showReformattingGuide != showReformattingGuide {

@@ -13,7 +13,7 @@ extension TextViewController {
         super.viewWillAppear()
         // The calculation this causes cannot be done until the view knows it's final position
         updateTextInsets()
-        minimapView.layout()
+        minimapView?.layout()
     }
 
     override public func viewDidAppear() {
@@ -40,11 +40,17 @@ extension TextViewController {
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
+        // 代码折叠：把计算/缓存模型接到折叠带上。
+        // LineFoldModel 会监听文本变化、用 foldProvider 异步计算折叠区间，
+        // 并驱动折叠带重绘；点击折叠带时由 ribbon 用 LineFoldPlaceholder 折叠区间。
+        let foldModel = LineFoldModel(controller: self, foldView: gutterView.foldingRibbon)
+        self.foldModel = foldModel
+        gutterView.foldingRibbon.model = foldModel
+
         reformattingGuideView = ReformattingGuideView(configuration: configuration)
         scrollView.addFloatingSubview(reformattingGuideView, for: .vertical)
 
-        minimapView = MinimapView(textView: textView, theme: configuration.appearance.theme)
-        scrollView.addFloatingSubview(minimapView, for: .vertical)
+        // 迷你地图在 ``setMinimapVisible(_:)`` 中按需创建。
 
         let findViewController = FindViewController(target: self, childView: scrollView)
         addChild(findViewController)
@@ -69,6 +75,8 @@ extension TextViewController {
         }
 
         setUpConstraints()
+        // 迷你地图按需创建：关闭时不占用额外的布局内存。
+        setMinimapVisible(configuration.peripherals.showMinimap)
         setUpOberservers()
 
         textView.updateFrameIfNeeded()
@@ -85,29 +93,14 @@ extension TextViewController {
     func setUpConstraints() {
         guard let findViewController else { return }
 
-        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: MinimapView.maxWidth)
-        let relativeWidthConstraint = minimapView.widthAnchor.constraint(
-            equalTo: view.widthAnchor,
-            multiplier: 0.17
-        )
-        relativeWidthConstraint.priority = .defaultLow
-        let minimapXConstraint = minimapView.trailingAnchor.constraint(
-            equalTo: scrollView.contentView.safeAreaLayoutGuide.trailingAnchor
-        )
-        self.minimapXConstraint = minimapXConstraint
-
         NSLayoutConstraint.activate([
             findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            minimapView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
-            minimapView.bottomAnchor.constraint(equalTo: scrollView.contentView.bottomAnchor),
-            minimapXConstraint,
-            maxWidthConstraint,
-            relativeWidthConstraint
+            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
+        // 迷你地图的约束在创建时建立，见 ``setMinimapVisible(_:)``。
     }
 
     func setUpOnScrollChangeObserver() {
