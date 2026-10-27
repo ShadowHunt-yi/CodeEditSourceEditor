@@ -1,0 +1,46 @@
+Sources/CodeEditSourceEditor/Find/PanelView/ReplaceSearchField.swift
+  s_c769df6767aed6::t_c748634164e44e 59-60,75-78,80-81,96-99,101
+  s_c769df6767aed6::t_43a6f053c65bda 57-58,102,113-114
+Sources/CodeEditSourceEditor/Find/PanelView/FindSearchField.swift
+  s_c769df6767aed6::t_c748634164e44e 114-115,132-135,137-138,155-158,160
+  s_c769df6767aed6::t_1c288dc6acc266 112-113,161,172-173
+Tests/CodeEditSourceEditorTests/Controller/TextViewControllerTests.swift
+  s_df5e26d5aeb794::t_6ae2d9adff28d7 483-488
+  s_df5e26d5aeb794::t_4d84236266f3ac 331-367
+Sources/CodeEditSourceEditor/Find/PanelView/ReplaceControls.swift
+  s_c769df6767aed6::t_c748634164e44e 78-79,93-96,98-99,113-116,118
+  s_c769df6767aed6::t_0883d5f13c74aa 76-77,119,131-132
+Sources/CodeEditSourceEditor/Find/PanelView/FindPanelView.swift
+  s_c769df6767aed6::t_c748634164e44e 111-112,123-126,128-129,142-145,147
+  s_c769df6767aed6::t_16fb6e40667f3c 109-110,148,159-160
+Sources/CodeEditSourceEditor/Find/PanelView/FindMethodPicker.swift
+  s_c769df6767aed6::t_c748634164e44e 221
+  s_c769df6767aed6::t_dca4aafb6dfe7a 219-220,222,226-227
+Sources/CodeEditSourceEditor/Find/PanelView/FindControls.swift
+  s_c769df6767aed6::t_c748634164e44e 81-82,95-98,100-101,114-117,119
+  s_c769df6767aed6::t_32f0046c4def1d 79-80,120,131-132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "2c7e73bfe180c8e9abcd9f00c61ac6e498d82f65",
+  "prompts": {},
+  "sessions": {
+    "s_c769df6767aed6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3e87a03a-c136-4ac7-884f-358f6441e8d7",
+        "model": "DeepSeek-V4.1-Flash"
+      },
+      "human_author": "qiyi <1724747604@qq.com>"
+    },
+    "s_df5e26d5aeb794": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "47035f45-c64f-429d-a78e-0d408de7eba5",
+        "model": "DeepSeek-V4.1-Flash"
+      },
+      "human_author": "qiyi <1724747604@qq.com>"
+    }
+  }
+}
