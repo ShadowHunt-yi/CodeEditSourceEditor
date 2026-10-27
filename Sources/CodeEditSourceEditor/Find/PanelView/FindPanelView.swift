@@ -106,7 +106,10 @@ class MockFindPanelTarget: FindPanelTarget {
     func findPanelModeDidChange(to mode: FindPanelMode) {}
 }
 
-#Preview("Find Mode") {
+#if DEBUG
+
+struct FindPanelViewPreviews: PreviewProvider {
+    static var previews: some View {
     FindPanelView(viewModel: {
         let vm = FindPanelViewModel(target: MockFindPanelTarget())
         vm.findText = "example"
@@ -117,8 +120,13 @@ class MockFindPanelTarget: FindPanelTarget {
     .frame(width: 400)
     .padding()
 }
+}
+#endif
 
-#Preview("Replace Mode") {
+#if DEBUG
+
+struct FindPanelViewPreviews2: PreviewProvider {
+    static var previews: some View {
     FindPanelView(viewModel: {
         let vm = FindPanelViewModel(target: MockFindPanelTarget())
         vm.mode = .replace
@@ -131,8 +139,13 @@ class MockFindPanelTarget: FindPanelTarget {
     .frame(width: 400)
     .padding()
 }
+}
+#endif
 
-#Preview("Condensed Layout") {
+#if DEBUG
+
+struct FindPanelViewPreviews3: PreviewProvider {
+    static var previews: some View {
     FindPanelView(viewModel: {
         let vm = FindPanelViewModel(target: MockFindPanelTarget())
         vm.findText = "example"
@@ -143,3 +156,5 @@ class MockFindPanelTarget: FindPanelTarget {
     .frame(width: 300)
     .padding()
 }
+}
+#endif

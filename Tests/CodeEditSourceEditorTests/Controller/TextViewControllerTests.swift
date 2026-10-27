@@ -328,6 +328,43 @@ final class TextViewControllerTests: XCTestCase {
         )
     }
 
+    /// 回归测试：历史崩溃 `findClosingPair` 中 `enumerateSubstrings` 抛 NSRangeException。
+    /// 三种越界形状：limit 超出文档、limit 与 from 倒置（负长度 range）、from 超出文档（残留选区）。
+    func test_findClosingPairOutOfRangeDoesNotCrash() {
+        _ = controller.textView.becomeFirstResponder()
+        controller.textView.string = "{ Lorem Ipsum {} }" // 长度 18
+        var idx: Int?
+
+        // 1) limit 超出文档末尾（visibleTextRange 未布局完成时的形状）
+        idx = controller.findClosingPair("{", "}", from: 1, limit: 100_000, reverse: false)
+        XCTAssert(idx == 17, "Forward with huge limit failed. Found: \(String(describing: idx))")
+
+        // 2) 反向且 limit 位于 from 上方（visibleTextRange 在光标下方很远）→ 旧行为产生负长度 range 直接崩溃
+        idx = controller.findClosingPair("}", "{", from: 5, limit: 50_000, reverse: true)
+        XCTAssert(idx == nil, "Backwards with inverted limit should be nil. Found: \(String(describing: idx))")
+
+        // 3) from 超出文档末尾（文本缩短后的残留选区）：必须夹紧在文档内
+        idx = controller.findClosingPair("{", "}", from: 999, limit: 0, reverse: true)
+        XCTAssert(
+            idx == nil || (idx ?? -1) < 18,
+            "Stale from must stay in bounds. Found: \(String(describing: idx))"
+        )
+
+        // 4) 正向且 limit 位于 from 下方（倒置窗口视为空）
+        idx = controller.findClosingPair("{", "}", from: 10, limit: 2, reverse: false)
+        XCTAssert(idx == nil, "Forward with inverted limit should be nil. Found: \(String(describing: idx))")
+
+        // 5) 空文档
+        controller.textView.string = ""
+        idx = controller.findClosingPair("{", "}", from: 0, limit: 0, reverse: false)
+        XCTAssert(idx == nil, "Empty document should be nil. Found: \(String(describing: idx))")
+
+        // 6) 退化窗口（from == limit）
+        controller.textView.string = "{ Lorem Ipsum {} }"
+        idx = controller.findClosingPair("{", "}", from: 18, limit: 18, reverse: false)
+        XCTAssert(idx == nil, "Degenerate window should be nil. Found: \(String(describing: idx))")
+    }
+
     // MARK: Set Text
 
     func test_setText() {
@@ -443,18 +480,28 @@ final class TextViewControllerTests: XCTestCase {
 
     // MARK: - Minimap
 
-    func test_minimapToggle() {
-        XCTAssertFalse(controller.minimapView.isHidden)
-        XCTAssertEqual(controller.minimapView.frame.width, MinimapView.maxWidth)
+    func test_minimapToggle() throws {
+        // 设计为「销毁/重建」而非 isHidden 切换：隐藏时销毁实例以释放独立布局资源，
+        // 显示时重建。配置经 didSetOnController 生效，改完需调 reloadUI()。
+        let minimapView = try XCTUnwrap(controller.minimapView)
+        XCTAssertFalse(minimapView.isHidden)
+        XCTAssertEqual(minimapView.frame.width, MinimapView.maxWidth)
         XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
 
         controller.configuration.peripherals.showMinimap = false
-        XCTAssertTrue(controller.minimapView.isHidden)
+        controller.reloadUI()
+        XCTAssertNil(controller.minimapView, "隐藏时应销毁 minimap 以释放独立布局资源")
         XCTAssertEqual(controller.textViewInsets.right, 0)
 
         controller.configuration.peripherals.showMinimap = true
-        XCTAssertFalse(controller.minimapView.isHidden)
-        XCTAssertEqual(controller.minimapView.frame.width, MinimapView.maxWidth)
+        controller.reloadUI()
+        // 真实应用中约束解析后由 frameDidChange 观察者（异步）重算 insets；
+        // 测试里没有 runloop 事件，显式布局 + 重算。
+        controller.view.layoutSubtreeIfNeeded()
+        controller.updateTextInsets()
+        let restored = try XCTUnwrap(controller.minimapView)
+        XCTAssertFalse(restored.isHidden)
+        XCTAssertEqual(restored.frame.width, MinimapView.maxWidth)
         XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
     }
 

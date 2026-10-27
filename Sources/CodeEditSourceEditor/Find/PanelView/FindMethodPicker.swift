@@ -216,7 +216,12 @@ struct FindMethodPicker: NSViewRepresentable {
     }
 }
 
-#Preview("Find Method Picker") {
+#if DEBUG
+
+struct FindMethodPickerPreviews: PreviewProvider {
+    static var previews: some View {
     FindMethodPicker(method: .constant(.contains))
         .padding()
 }
+}
+#endif

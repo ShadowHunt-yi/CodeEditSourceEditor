@@ -73,7 +73,10 @@ struct ReplaceControls: View {
     }
 }
 
-#Preview("Replace Controls - Full") {
+#if DEBUG
+
+struct ReplaceControlsPreviews: PreviewProvider {
+    static var previews: some View {
     ReplaceControls(
         viewModel: {
             let vm = FindPanelViewModel(target: MockFindPanelTarget())
@@ -87,8 +90,13 @@ struct ReplaceControls: View {
     )
     .padding()
 }
+}
+#endif
 
-#Preview("Replace Controls - Condensed") {
+#if DEBUG
+
+struct ReplaceControlsPreviews2: PreviewProvider {
+    static var previews: some View {
     ReplaceControls(
         viewModel: {
             let vm = FindPanelViewModel(target: MockFindPanelTarget())
@@ -102,8 +110,13 @@ struct ReplaceControls: View {
     )
     .padding()
 }
+}
+#endif
 
-#Preview("Replace Controls - No Matches") {
+#if DEBUG
+
+struct ReplaceControlsPreviews3: PreviewProvider {
+    static var previews: some View {
     ReplaceControls(
         viewModel: {
             let vm = FindPanelViewModel(target: MockFindPanelTarget())
@@ -115,3 +128,5 @@ struct ReplaceControls: View {
     )
     .padding()
 }
+}
+#endif

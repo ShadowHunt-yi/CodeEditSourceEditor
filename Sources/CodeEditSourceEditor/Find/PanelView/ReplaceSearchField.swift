@@ -54,7 +54,10 @@ struct ReplaceSearchField: View {
     }
 }
 
-#Preview("Replace Search Field - Full") {
+#if DEBUG
+
+struct ReplaceSearchFieldPreviews: PreviewProvider {
+    static var previews: some View {
     @FocusState var focus: FindPanelView.FindPanelFocus?
     ReplaceSearchField(
         viewModel: {
@@ -69,8 +72,13 @@ struct ReplaceSearchField: View {
     .frame(width: 300)
     .padding()
 }
+}
+#endif
 
-#Preview("Replace Search Field - Condensed") {
+#if DEBUG
+
+struct ReplaceSearchFieldPreviews2: PreviewProvider {
+    static var previews: some View {
     @FocusState var focus: FindPanelView.FindPanelFocus?
     ReplaceSearchField(
         viewModel: {
@@ -85,8 +93,13 @@ struct ReplaceSearchField: View {
     .frame(width: 200)
     .padding()
 }
+}
+#endif
 
-#Preview("Replace Search Field - Empty") {
+#if DEBUG
+
+struct ReplaceSearchFieldPreviews3: PreviewProvider {
+    static var previews: some View {
     @FocusState var focus: FindPanelView.FindPanelFocus?
     ReplaceSearchField(
         viewModel: FindPanelViewModel(target: MockFindPanelTarget()),
@@ -97,3 +110,5 @@ struct ReplaceSearchField: View {
     .frame(width: 300)
     .padding()
 }
+}
+#endif

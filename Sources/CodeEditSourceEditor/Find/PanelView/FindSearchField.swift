@@ -109,7 +109,10 @@ struct FindSearchField: View {
     }
 }
 
-#Preview("Find Search Field - Full") {
+#if DEBUG
+
+struct FindSearchFieldPreviews: PreviewProvider {
+    static var previews: some View {
     @FocusState var focus: FindPanelView.FindPanelFocus?
     FindSearchField(
         viewModel: {
@@ -126,8 +129,13 @@ struct FindSearchField: View {
     .frame(width: 300)
     .padding()
 }
+}
+#endif
 
-#Preview("Find Search Field - Condensed") {
+#if DEBUG
+
+struct FindSearchFieldPreviews2: PreviewProvider {
+    static var previews: some View {
     @FocusState var focus: FindPanelView.FindPanelFocus?
     FindSearchField(
         viewModel: {
@@ -144,8 +152,13 @@ struct FindSearchField: View {
     .frame(width: 200)
     .padding()
 }
+}
+#endif
 
-#Preview("Find Search Field - Empty") {
+#if DEBUG
+
+struct FindSearchFieldPreviews3: PreviewProvider {
+    static var previews: some View {
     @FocusState var focus: FindPanelView.FindPanelFocus?
     FindSearchField(
         viewModel: FindPanelViewModel(target: MockFindPanelTarget()),
@@ -156,3 +169,5 @@ struct FindSearchField: View {
     .frame(width: 300)
     .padding()
 }
+}
+#endif

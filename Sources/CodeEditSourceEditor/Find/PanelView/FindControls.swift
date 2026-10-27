@@ -76,7 +76,10 @@ struct FindControls: View {
     }
 }
 
-#Preview("Find Controls - Full") {
+#if DEBUG
+
+struct FindControlsPreviews: PreviewProvider {
+    static var previews: some View {
     FindControls(
         viewModel: {
             let vm = FindPanelViewModel(target: MockFindPanelTarget())
@@ -89,8 +92,13 @@ struct FindControls: View {
     )
     .padding()
 }
+}
+#endif
 
-#Preview("Find Controls - Condensed") {
+#if DEBUG
+
+struct FindControlsPreviews2: PreviewProvider {
+    static var previews: some View {
     FindControls(
         viewModel: {
             let vm = FindPanelViewModel(target: MockFindPanelTarget())
@@ -103,8 +111,13 @@ struct FindControls: View {
     )
     .padding()
 }
+}
+#endif
 
-#Preview("Find Controls - No Matches") {
+#if DEBUG
+
+struct FindControlsPreviews3: PreviewProvider {
+    static var previews: some View {
     FindControls(
         viewModel: {
             let vm = FindPanelViewModel(target: MockFindPanelTarget())
@@ -115,3 +128,5 @@ struct FindControls: View {
     )
     .padding()
 }
+}
+#endif
