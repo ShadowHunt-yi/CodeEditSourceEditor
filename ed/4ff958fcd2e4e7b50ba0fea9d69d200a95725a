@@ -1,0 +1,19 @@
+Sources/CodeEditSourceEditor/Controller/TextViewController+EmphasizeBracket.swift
+  s_df5e26d5aeb794::t_4d84236266f3ac 16,18-20,40-44,48-49,60-64,68-69,104-122,129-130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "ed4ff958fcd2e4e7b50ba0fea9d69d200a95725a",
+  "prompts": {},
+  "sessions": {
+    "s_df5e26d5aeb794": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "47035f45-c64f-429d-a78e-0d408de7eba5",
+        "model": "DeepSeek-V4.1-Flash"
+      },
+      "human_author": "qiyi <1724747604@qq.com>"
+    }
+  }
+}
