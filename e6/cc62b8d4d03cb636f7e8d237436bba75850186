@@ -1,0 +1,14 @@
+Sources/CodeEditSourceEditor/LineFolding/Model/LineFoldCalculator.swift
+  h_6984196a933a03 49-54,56-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "e6cc62b8d4d03cb636f7e8d237436bba75850186",
+  "prompts": {},
+  "humans": {
+    "h_6984196a933a03": {
+      "author": "qiyi <1724747604@qq.com>"
+    }
+  }
+}
