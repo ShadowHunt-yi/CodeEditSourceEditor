@@ -1,0 +1,14 @@
+Package.swift
+  h_6984196a933a03 8,19,21,24,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "efb55b4226b621686f7df0e12d5b6d91403efd63",
+  "prompts": {},
+  "humans": {
+    "h_6984196a933a03": {
+      "author": "qiyi <1724747604@qq.com>"
+    }
+  }
+}
