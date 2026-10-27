@@ -13,7 +13,11 @@ extension TextViewController {
     internal func emphasizeSelectionPairs() {
         guard let bracketPairEmphasis = configuration.appearance.bracketPairEmphasis else { return }
         textView.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
+        let documentLength = textView.documentRange.length
         for range in textView.selectionManager.textSelections.map({ $0.range }) {
+            // 选区可能在文本缩短后残留（stale），先夹紧到文档范围，
+            // 否则 substring(with:) 会抛 NSRangeException。
+            guard range.location <= documentLength else { continue }
             if range.isEmpty,
                range.location > 0, // Range is not the beginning of the document
                let precedingCharacter = textView.textStorage.substring(
@@ -33,11 +37,16 @@ extension TextViewController {
     }
 
     private func emphasizeForwards(_ pair: (String, String), range: NSRange, emphasisType: BracketPairEmphasis) {
+        // 搜索窗口锚定在 from 处：visibleTextRange 可能为 nil（布局完成前）或与光标
+        // 相距很远，此时仍保证至少覆盖 from 起的 4096 字符，窗口永不倒置。
+        let from = range.location
+        let visibleMax = (textView.visibleTextRange ?? .zero).max
+        let limit = min(max(visibleMax + 4096, from + 4096), textView.documentRange.max)
         if let characterIndex = findClosingPair(
             pair.0,
             pair.1,
-            from: range.location,
-            limit: min((textView.visibleTextRange ?? .zero).max + 4096, textView.documentRange.max),
+            from: from,
+            limit: limit,
             reverse: false
         ) {
             emphasizeCharacter(characterIndex)
@@ -48,11 +57,16 @@ extension TextViewController {
     }
 
     private func emphasizeBackwards(_ pair: (String, String), range: NSRange, emphasisType: BracketPairEmphasis) {
+        // 同上：窗口下界锚定在 from 处，避免 visibleTextRange 位于光标下方很远时
+        // limit > from 产生负长度 NSRange（崩溃报告中的场景）。
+        let from = range.location - 1
+        let visibleMin = textView.visibleTextRange?.location ?? 0
+        let limit = max(min(visibleMin - 4096, from - 4096), textView.documentRange.location)
         if let characterIndex = findClosingPair(
             pair.1,
             pair.0,
-            from: range.location - 1,
-            limit: max((textView.visibleTextRange?.location ?? 0) - 4096, textView.documentRange.location),
+            from: from,
+            limit: limit,
             reverse: true
         ) {
             emphasizeCharacter(characterIndex)
@@ -87,16 +101,33 @@ extension TextViewController {
     /// - Returns: The index of the found closing pair, if any.
     internal func findClosingPair(_ close: String, _ open: String, from: Int, limit: Int, reverse: Bool) -> Int? {
         // Walk the text, counting each close. When we find an open that makes closeCount < 0, return that index.
+        let string = textView.textStorage.mutableString
+        let length = string.length
+        // 防御性夹紧：from/limit 可能超出文档范围（文本缩短后的残留选区）
+        // 或互相倒置（visibleTextRange 与光标相距很远）。
+        // 原先直接构造 NSRange 会得到负长度/越界 range，
+        // enumerateSubstrings 抛 NSRangeException（崩溃报告 findClosingPair + 1180）。
+        // 倒置的搜索窗口视为空区间返回 nil，保持方向语义。
+        let lower: Int
+        let upper: Int
+        if reverse {
+            upper = min(max(from, 0), length)
+            lower = max(min(limit, upper), 0)
+        } else {
+            lower = max(min(from, length), 0)
+            upper = min(max(limit, lower), length)
+        }
+        guard upper > lower else { return nil }
+        let searchRange = NSRange(location: lower, length: upper - lower)
+
         var options: NSString.EnumerationOptions = .byCaretPositions
         if reverse {
             options = options.union(.reverse)
         }
         var closeCount = 0
         var index: Int?
-        textView.textStorage.mutableString.enumerateSubstrings(
-            in: reverse ?
-                NSRange(location: limit, length: from - limit) :
-                NSRange(location: from, length: limit - from),
+        string.enumerateSubstrings(
+            in: searchRange,
             options: options,
             using: { substring, range, _, stop in
                 if substring == close {
