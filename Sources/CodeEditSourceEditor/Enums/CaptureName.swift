@@ -33,6 +33,13 @@ public enum CaptureName: Int8, CaseIterable, Sendable {
     case variableBuiltin
     case keywordReturn
     case keywordFunction
+    // 标记语言（Markdown/XML 等）的语义 token
+    case textTitle
+    case textLiteral
+    case textURI
+    case textReference
+    case punctuationSpecial
+    case textQuote
 
     var alternate: CaptureName {
         switch self {
@@ -92,6 +99,22 @@ public enum CaptureName: Int8, CaseIterable, Sendable {
             return .keywordReturn
         case "keyword.function":
             return .keywordFunction
+        case "text.title", "markup.heading", "heading":
+            return .textTitle
+        case "text.literal", "markup.raw", "markup.raw.block", "markup.raw.inline":
+            return .textLiteral
+        case "text.uri", "markup.link.url", "string.special.url":
+            return .textURI
+        case "text.reference", "markup.link.label", "string.special":
+            return .textReference
+        case "punctuation.special", "markup.list":
+            return .punctuationSpecial
+        case "text.quote", "markup.quote", "text.emphasis", "text.strong", "markup.italic", "markup.bold":
+            return .textQuote
+        case "punctuation.delimiter":
+            return .keyword
+        case "string.escape":
+            return .string
         default:
             return nil
         }
@@ -142,6 +165,18 @@ public enum CaptureName: Int8, CaseIterable, Sendable {
             return "keywordReturn"
         case .keywordFunction:
             return "keywordFunction"
+        case .textTitle:
+            return "text.title"
+        case .textLiteral:
+            return "text.literal"
+        case .textURI:
+            return "text.uri"
+        case .textReference:
+            return "text.reference"
+        case .punctuationSpecial:
+            return "punctuation.special"
+        case .textQuote:
+            return "text.quote"
         }
     }
 }

@@ -94,6 +94,13 @@ public struct EditorTheme: Equatable {
         case .type: return types
         case .parameter: return variables
         case .typeAlternate: return attributes
+        // 标记语言 token：标题=类型色、代码块=字符串色、链接=属性色、
+        // 列表/标题标记=关键字色、引用=注释色（复用主题已有槽位）。
+        case .textTitle: return types
+        case .textLiteral: return strings
+        case .textURI, .textReference: return attributes
+        case .punctuationSpecial: return keywords
+        case .textQuote: return comments
         default: return text
         }
     }
