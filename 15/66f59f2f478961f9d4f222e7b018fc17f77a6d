@@ -1,0 +1,43 @@
+Tests/CodeEditSourceEditorTests/Controller/TextViewControllerTests.swift
+  s_b8eacdb4864eb1::t_dcde1c9da7b455 508-556
+Sources/CodeEditSourceEditor/Highlighting/Highlighter.swift
+  s_b8eacdb4864eb1::t_bb94d95f92477d 84-86,121-149,252-254
+Sources/CodeEditSourceEditor/Controller/TextViewController+MinimapEvents.swift
+  s_b8eacdb4864eb1::t_dcde1c9da7b455 1-48
+Sources/CodeEditSourceEditor/Controller/TextViewController.swift
+  s_b8eacdb4864eb1::t_bb94d95f92477d 380-383
+  s_b8eacdb4864eb1::t_dcde1c9da7b455 46-47,255-256,261-269,271-272,399-401
+  s_b8eacdb4864eb1::t_94f465d0c8b4a9 273-275
+Sources/CodeEditSourceEditor/Minimap/MinimapView.swift
+  s_b8eacdb4864eb1::t_dcde1c9da7b455 10,30,141-146,278-283,286,289-295,334
+  s_b8eacdb4864eb1::t_c4c7c74f651dd7 296-298
+  s_b8eacdb4864eb1::t_dde73ebf8cf3d0 331-333
+  s_b8eacdb4864eb1::t_75ad4c05f2a8ef 335
+Sources/CodeEditSourceEditor/TreeSitter/TreeSitterClient.swift
+  s_b8eacdb4864eb1::t_bb94d95f92477d 32-40,138-143,147-154,250-251
+Sources/CodeEditSourceEditor/Enums/CaptureName.swift
+  s_b8eacdb4864eb1::t_bb94d95f92477d 69,71-80,93-106,176,182,186-187,189-192
+  s_b8eacdb4864eb1::t_b80041d9f56bd9 81-83,90-92
+  s_b8eacdb4864eb1::t_b0a4aa79513b29 173-175
+  s_b8eacdb4864eb1::t_bbfa7346507758 177-181
+  s_b8eacdb4864eb1::t_207a28a281b169 183-185
+  s_b8eacdb4864eb1::t_21f828bd13fc9d 188
+Sources/CodeEditSourceEditor/Theme/EditorTheme.swift
+  s_b8eacdb4864eb1::t_fd4c2791baf8f1 45-69,86-96,114-123,131-133,135-188
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "1566f59f2f478961f9d4f222e7b018fc17f77a6d",
+  "prompts": {},
+  "sessions": {
+    "s_b8eacdb4864eb1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2da4e1d8-4c6a-4fe8-8a21-e9e7959a12b8",
+        "model": "DeepSeek-V4.1-Flash"
+      },
+      "human_author": "qiyi <1724747604@qq.com>"
+    }
+  }
+}
