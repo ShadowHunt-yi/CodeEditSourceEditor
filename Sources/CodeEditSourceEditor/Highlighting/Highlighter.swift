@@ -81,6 +81,9 @@ class Highlighter: NSObject {
     /// Counts upwards to provide unique IDs for new highlight providers.
     private var providerIdCounter: Int
 
+    /// tree-sitter 初始解析完成的通知观察者，用于补一轮查询。
+    private var setUpObserver: NSObjectProtocol?
+
     // MARK: - Init
 
     init(
@@ -114,6 +117,35 @@ class Highlighter: NSObject {
                 visibleRangeProvider: visibleRangeProvider,
                 language: language
             )
+        }
+
+        // 文本通常在 Highlighter 之前就已经加载进 NSTextStorage 了
+        // （`TextViewController.setText` 是先写文本、再创建 Highlighter），
+        // 那一次整体写入不会触发 NSTextStorageDelegate 的 didProcessEditing。
+        // 如果这里不主动发起一轮查询，高亮就只能等用户滚动或编辑才会出现——
+        // 在窗口/编辑器尺寸一开始就是最终值的场景（标签页里的编辑器）尤其明显：
+        // frame/bounds 从头到尾没有变化，永远等不到 frameDidChange 通知。
+        //
+        // 连调三次的原因：
+        // - 现在调一次，布局已经完成就能立刻查；
+        // - 下一个 runloop 再调一次，覆盖「文本已写入、行布局还没跑完」的情况；
+        // - 隔一会儿再调一次，覆盖「tree-sitter 的初始解析还在后台跑」的情况——
+        //   查询走的是 access 优先级，会被前面的 reset 解析任务挡在队列里，
+        //   解析（大文件可能要几百毫秒）没结束之前查询根本不会执行。
+        visibleRangeProvider.visibleTextChanged()
+        DispatchQueue.main.async { [weak visibleRangeProvider] in
+            visibleRangeProvider?.visibleTextChanged()
+        }
+
+        // tree-sitter 的初始解析是异步的（reset 优先级），查询是 access 优先级，
+        // 会被解析任务挡在 executor 队列外。解析完成的那一刻补一轮查询，
+        // 高亮才会在文件打开后立刻出现，而不是等用户滚动或编辑。
+        setUpObserver = NotificationCenter.default.addObserver(
+            forName: TreeSitterClient.setUpFinishedNotification,
+            object: nil,
+            queue: .main
+        ) { [weak visibleRangeProvider] _ in
+            visibleRangeProvider?.visibleTextChanged()
         }
     }
 
@@ -217,6 +249,9 @@ class Highlighter: NSObject {
     }
 
     deinit {
+        if let setUpObserver {
+            NotificationCenter.default.removeObserver(setUpObserver)
+        }
         self.attributeProvider = nil
         self.textView = nil
         self.highlightProviders = []

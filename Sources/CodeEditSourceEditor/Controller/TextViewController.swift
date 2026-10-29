@@ -43,6 +43,8 @@ public class TextViewController: NSViewController {
     var invisibleCharactersCoordinator: InvisibleCharactersCoordinator
 
     var minimapXConstraint: NSLayoutConstraint?
+    /// 缩略图的鼠标接管（见 `TextViewController+MinimapEvents.swift`）。
+    var minimapEventMonitor: Any?
 
     var _undoManager: CEUndoManager!
     var systemAppearance: NSAppearance.Name?
@@ -250,15 +252,32 @@ public class TextViewController: NSViewController {
             let minimap = MinimapView(textView: textView, theme: configuration.appearance.theme)
             minimapView = minimap
             scrollView.addFloatingSubview(minimap, for: .vertical)
+            // 显式压到最上层：浮动容器里若还有别的内容，事件可能被先一步截走。
+            minimap.superview?.addSubview(minimap, positioned: .above, relativeTo: nil)
             activateMinimapConstraints(for: minimap)
             highlighter?.updateMinimapView(minimap)
             styleMinimapView()
             minimap.layout()
+            setUpMinimapEventMonitor()
+            // 缩略图的宽度由 Auto Layout 决定，创建当帧还是 0；
+            // 等它拿到真实宽度后再补右侧内边距，否则正文会钻到缩略图下面。
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(minimapFrameDidChange),
+                name: NSView.frameDidChangeNotification,
+                object: minimap
+            )
         } else {
-            guard minimapView != nil else { return }
+            guard let existing = minimapView else { return }
+            removeMinimapEventMonitor()
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSView.frameDidChangeNotification,
+                object: existing
+            )
             highlighter?.updateMinimapView(nil)
-            NSLayoutConstraint.deactivate(minimapView?.constraints ?? [])
-            minimapView?.removeFromSuperview()
+            NSLayoutConstraint.deactivate(existing.constraints)
+            existing.removeFromSuperview()
             minimapView = nil
             minimapXConstraint = nil
         }
@@ -358,6 +377,10 @@ public class TextViewController: NSViewController {
     /// - Parameter text: The new contents of the editor.
     public func setText(_ text: String) {
         self.textView.setText(text)
+        // 行布局必须先跑完：Highlighter 的第一轮查询要靠 `visibleTextRange` 决定查哪段，
+        // 而它来自已生成的行。`setTextStorage` 只标了 needsLayout，真正的行布局
+        // 要等下一次 view layout 才发生，这里主动算一次。
+        self.textView.layoutManager.layoutLines()
         self.setUpHighlighter()
         self.gutterView.setNeedsDisplay(self.gutterView.frame)
     }
@@ -373,6 +396,9 @@ public class TextViewController: NSViewController {
         }
         textCoordinators.removeAll()
         NotificationCenter.default.removeObserver(self)
+        if let minimapEventMonitor {
+            NSEvent.removeMonitor(minimapEventMonitor)
+        }
         cancellables.forEach { $0.cancel() }
         if let localEventMonitor {
             NSEvent.removeMonitor(localEventMonitor)

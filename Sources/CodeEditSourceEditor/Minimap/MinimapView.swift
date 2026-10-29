@@ -7,6 +7,7 @@
 
 import AppKit
 import CodeEditTextView
+import OSLog
 
 /// The minimap view displays a copy of editor contents as a series of small bubbles in place of text.
 ///
@@ -26,6 +27,7 @@ import CodeEditTextView
 /// The minimap can be styled using an ``EditorTheme``. See ``setTheme(_:)`` for use and colors used by this view.
 public class MinimapView: FlippedNSView {
     static let maxWidth: CGFloat = 140.0
+    static let logger = Logger(subsystem: "com.codeedit.sourceeditor", category: "Minimap")
 
     weak var textView: TextView?
 
@@ -136,6 +138,12 @@ public class MinimapView: FlippedNSView {
         )
         documentVisibleView.addGestureRecognizer(documentVisibleViewPanGesture)
         self.documentVisibleViewPanGesture = documentVisibleViewPanGesture
+
+        let click = NSClickGestureRecognizer(
+            target: self,
+            action: #selector(documentVisibleViewClicked(_:))
+        )
+        documentVisibleView.addGestureRecognizer(click)
     }
 
     /// Create the layout manager, using text contents from the given textview.
@@ -267,22 +275,64 @@ public class MinimapView: FlippedNSView {
     }
 
     override public func hitTest(_ point: NSPoint) -> NSView? {
-        guard let point = superview?.convert(point, to: self) else { return nil }
-        // For performance, don't hitTest the layout fragment views, but make sure the `documentVisibleView` is
-        // hittable.
-        if documentVisibleView.frame.contains(point) {
+        let localPoint = superview.map { convert(point, from: $0) } ?? point
+        // 之前这里用 `visibleRect.contains` 判断，结果在真实窗口里（滚动视图的浮动容器、
+        // 水平滚动之后）可能算出空区域，于是返回 nil，点击直接穿透到文本视图。
+        // 现在只要落在 bounds 内就吃掉事件：缩略图区域的点击本就不该交给编辑器。
+        guard bounds.contains(localPoint) else { return nil }
+        if documentVisibleView.frame.contains(localPoint) {
             return documentVisibleView
-        } else if visibleRect.contains(point) {
-            return self
-        } else {
-            return super.hitTest(point)
         }
+        return self
     }
 
-    // Eat mouse events so we don't pass them on to the text view. Leads to some odd behavior otherwise.
+    // 缩略图上的点击/拖动要把编辑器滚到对应位置。
+    // 之前这里是空实现（只为吞掉事件不传给文本视图），于是点缩略图毫无反应。
 
-    override public func mouseDown(with event: NSEvent) { }
-    override public func mouseDragged(with event: NSEvent) { }
+    override public func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        Self.logger.log("minimap mouseDown at \(point.x, privacy: .public),\(point.y, privacy: .public)")
+        scrollEditor(to: point)
+    }
+
+    override public func mouseDragged(with event: NSEvent) {
+        scrollEditor(to: convert(event.locationInWindow, from: nil))
+    }
+
+    override public func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    /// 把缩略图坐标系里的点映射回编辑器，并让该位置落在可视区中央。
+    func scrollEditor(to pointInSelf: NSPoint) {
+        guard let textView, let editorScrollView = textView.enclosingScrollView else { return }
+        guard bounds.contains(pointInSelf) else { return }
+
+        let contentPoint = contentView.convert(pointInSelf, from: self)
+        let minimapContentHeight = max(contentView.frame.height, 1)
+        let editorContentHeight = max(textView.frame.height, 1)
+
+        // 缩略图整幅按比例对应整篇文档：先还原成文档坐标，再换算成滚动偏移。
+        let clampedY = min(max(contentPoint.y, 0), minimapContentHeight)
+        let documentY = clampedY * (editorContentHeight / minimapContentHeight)
+
+        let insets = editorScrollView.contentInsets
+        let visibleHeight = max(editorScrollView.documentVisibleRect.height - insets.vertical, 1)
+        var target = documentY - visibleHeight / 2 - insets.top
+        target = max(-insets.top, target)
+        target = min(editorScrollView.documentMaxOriginY - insets.top, target)
+
+        editorScrollView.contentView.scroll(
+            to: NSPoint(x: editorScrollView.contentView.bounds.origin.x, y: target)
+        )
+        editorScrollView.reflectScrolledClipView(editorScrollView.contentView)
+    }
+
+    /// 点击落在「可见区域」矩形上时，事件被该子视图接走，需要单独处理。
+    @objc func documentVisibleViewClicked(_ sender: NSClickGestureRecognizer) {
+        let point = sender.location(in: self)
+        scrollEditor(to: point)
+    }
 
     /// Sets the content view height, matching the text view's overscroll setting as well as the layout manager's
     /// cached height.

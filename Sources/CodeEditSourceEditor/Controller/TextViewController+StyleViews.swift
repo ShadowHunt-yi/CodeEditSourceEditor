@@ -80,6 +80,14 @@ extension TextViewController {
     }
 
     /// Updates the text view's text insets. See ``textViewInsets`` for calculation.
+    /// 缩略图宽度变化后重算右侧内边距。
+    @objc func minimapFrameDidChange() {
+        // 延后一帧：在布局通知里同步改 textInsets 容易触发「布局中再次布局」。
+        DispatchQueue.main.async { [weak self] in
+            self?.updateTextInsets()
+        }
+    }
+
     func updateTextInsets() {
         // 允许在 ``loadView()`` 完成前被调用：`GutterView.init` 内部就会通过 delegate 触发本方法，
         // 此时 `gutterView` / `minimapView` 都还不存在。

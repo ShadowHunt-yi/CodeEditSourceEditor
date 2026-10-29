@@ -505,6 +505,55 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
     }
 
+    func test_minimapClickScrollsEditor() throws {
+        // 用户反馈：点击缩略图，左侧代码不跳转。
+        // 点到底部时编辑器应滚到接近文末，而不是原地不动。
+        let longText = (0..<400).map { "line \($0)" }.joined(separator: "\n")
+        controller.setText(longText)
+        controller.view.layoutSubtreeIfNeeded()
+        controller.updateContentInsets()
+
+        let minimap = try XCTUnwrap(controller.minimapView)
+        let scrollView = try XCTUnwrap(controller.textView.enclosingScrollView)
+        scrollView.contentView.scroll(to: .zero)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+
+        minimap.scrollEditor(to: NSPoint(x: minimap.bounds.midX, y: minimap.bounds.maxY - 2))
+
+        XCTAssertGreaterThan(
+            scrollView.contentView.bounds.origin.y,
+            0,
+            "点击缩略图底部后，编辑器应向下滚动"
+        )
+    }
+
+    func test_minimapHitTestFromWindow() throws {
+        // 用户反馈：点缩略图会穿透到代码区。这里从窗口层做真实命中测试，
+        // 缩略图区域内必须命中缩略图（或它的可见区域框），不能落到文本视图。
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentViewController = controller
+        controller.view.frame = NSRect(x: 0, y: 0, width: 1000, height: 800)
+        controller.view.layoutSubtreeIfNeeded()
+
+        let minimap = try XCTUnwrap(controller.minimapView)
+        let center = NSPoint(x: minimap.bounds.midX, y: minimap.bounds.midY)
+        let pointInWindow = minimap.convert(center, to: nil)
+        let contentView = try XCTUnwrap(window.contentView)
+        let hit = try XCTUnwrap(
+            contentView.hitTest(pointInWindow),
+            "缩略图区域的点击没有命中任何视图（会穿透到编辑器）"
+        )
+        XCTAssertTrue(
+            hit === minimap || hit === minimap.documentVisibleView,
+            "缩略图区域应命中缩略图，实际命中了 \(type(of: hit))"
+        )
+    }
+
     // MARK: Folding Ribbon
 
     func test_foldingRibbonToggle() {

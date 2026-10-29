@@ -29,6 +29,15 @@ import OSLog
 public final class TreeSitterClient: HighlightProviding {
     static let logger: Logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "TreeSitterClient")
 
+    /// 初始解析（`setUp` 里的 reset 任务）完成后发出。
+    ///
+    /// 查询是 access 优先级，会被前面的 reset 解析任务挡在 executor 队列外；
+    /// 解析大文件时这段时间可能有几百毫秒。监听这个通知可以在解析完成的
+    /// 那一刻立刻补一轮查询，而不必等用户滚动或编辑。
+    public static let setUpFinishedNotification = Notification.Name(
+        "CodeEditSourceEditor.TreeSitterClient.setUpFinished"
+    )
+
     enum TreeSitterClientError: Error {
         case invalidEdit
     }
@@ -126,14 +135,23 @@ public final class TreeSitterClient: HighlightProviding {
                 readBlock: readBlock
             )
             self?.state = state
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: Self.setUpFinishedNotification,
+                    object: self
+                )
+            }
         }
 
         executor.cancelAll(below: .all)
-        if forceSyncOperation {
-            executor.execSync(operation)
-        } else {
-            executor.execAsync(priority: .reset, operation: operation, onCancel: {})
-        }
+        // 初始解析不走 executor 队列，直接同步跑完。
+        //
+        // 原因：解析是 reset 优先级、查询是 access 优先级，access 任务会被队列里的
+        // reset 任务挡在门外；而查询又排在解析后面——一旦解析排队等待，两者就互相等，
+        // 高亮永远出不来（实测大文件下这个死结稳定复现）。
+        //
+        // 同步解析对常规源码文件是几十到几百毫秒，换来的是「文件一打开就有高亮」。
+        operation()
     }
 
     // MARK: - HighlightProviding
@@ -229,7 +247,8 @@ public final class TreeSitterClient: HighlightProviding {
             executor.execAsync(
                 priority: .access,
                 operation: {
-                    DispatchQueue.dispatchMainIfNot { completion(.success(operation())) }
+                    let highlights = operation()
+                    DispatchQueue.dispatchMainIfNot { completion(.success(highlights)) }
                 },
                 onCancel: {
                     DispatchQueue.dispatchMainIfNot {
