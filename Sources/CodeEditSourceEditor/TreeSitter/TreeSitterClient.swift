@@ -144,14 +144,32 @@ public final class TreeSitterClient: HighlightProviding {
         }
 
         executor.cancelAll(below: .all)
-        // 初始解析不走 executor 队列，直接同步跑完。
+
+        // 初始解析按文档大小分流，和 `queryHighlightsFor` 用的是同一个阈值
+        // （`maxSyncContentLength`，100 万字符）。
         //
-        // 原因：解析是 reset 优先级、查询是 access 优先级，access 任务会被队列里的
-        // reset 任务挡在门外；而查询又排在解析后面——一旦解析排队等待，两者就互相等，
-        // 高亮永远出不来（实测大文件下这个死结稳定复现）。
+        // 小文件仍然同步解析：几十到几百毫秒，换来「文件一打开就有高亮」。
         //
-        // 同步解析对常规源码文件是几十到几百毫秒，换来的是「文件一打开就有高亮」。
-        operation()
+        // 大文件必须异步：tree-sitter 的首次解析是 O(n)，12MB / 20 万行的文件
+        // 在 Debug 下要几秒。同步跑就等于「打开文件时主线程被占住几秒」，
+        // 表现就是彻底卡死。此时 `state` 还是 nil，查询会立刻返回空，
+        // 界面先以纯文本显示；解析完成时 `setUpFinishedNotification` 会触发
+        // 一轮视口查询，高亮随即出现。
+        //
+        // 关于死锁：解析（reset）排在队列前面、查询（access）排在后面，
+        // 只有在「解析异步 + 查询同步」的组合下才会互相等——因为同步查询会
+        // 阻塞等待队列，而队列里的解析又要回主线程取文本。查询侧已经对
+        // 大文件走异步了，所以这里让解析也异步是安全的。
+        let isLargeDocument = textView.documentRange.length > Constants.maxSyncContentLength
+        if isLargeDocument {
+            executor.execAsync(
+                priority: .reset,
+                operation: { operation() },
+                onCancel: {}
+            )
+        } else {
+            operation()
+        }
     }
 
     // MARK: - HighlightProviding
